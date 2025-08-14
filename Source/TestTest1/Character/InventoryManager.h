@@ -17,35 +17,52 @@ protected:
     virtual void BeginPlay() override;
 
 private:
-    // Текущее оружие в руках
+    static constexpr int32 MaxSlots = 2;
+
+    // Weapon slots (two maximum)
     UPROPERTY()
-    AWeaponBase* CurrentWeapon;
+    AWeaponBase* Weapons[MaxSlots] = { nullptr, nullptr };
 
-public:
-    // Получить текущее оружие
-    UFUNCTION(BlueprintCallable)
-    AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
-
-    UFUNCTION(BlueprintCallable)
-    void PickUpWeapon();
-
-    // Надеть оружие (назначить)
-    UFUNCTION(BlueprintCallable)
-    void EquipWeapon(AWeaponBase* NewWeapon);
-
-    // Снять текущее оружие (сделать null)
-    UFUNCTION(BlueprintCallable)
-    void UnequipWeapon();
-
-    // Стрельнуть из текущего оружия
-    UFUNCTION(BlueprintCallable)
-    void FireCurrentWeapon();
-
-    // Перезарядить текущее оружие
-    UFUNCTION(BlueprintCallable)
-    void ReloadCurrentWeapon();
+    // Currently equipped weapon slot index (-1 = none)
+    int32 CurrentSlotIndex = -1;
 
     UPROPERTY(EditAnywhere, Category = "Pickup")
     float PickupRange = 500.f;
 
+    // Helper to find first empty slot, returns -1 if inventory full
+    int32 FindEmptySlot() const;
+
+    // Attach weapon to character's mesh (right hand socket)
+    void AttachWeaponToHand(AWeaponBase* Weapon);
+
+    // Detach weapon from character
+    void DetachWeapon(AWeaponBase* Weapon);
+
+public:
+    UFUNCTION(BlueprintCallable)
+    AWeaponBase* GetCurrentWeapon() const;
+
+    UFUNCTION(BlueprintCallable)
+    void PickUpWeapon();
+
+    UFUNCTION(BlueprintCallable)
+    void EquipWeapon(int32 SlotIndex);
+
+    UFUNCTION(BlueprintCallable)
+    void UnequipCurrentWeapon();
+
+    UFUNCTION(BlueprintCallable)
+    void DropCurrentWeapon();
+
+    UFUNCTION(BlueprintCallable)
+    void NextWeapon();
+
+    UFUNCTION(BlueprintCallable)
+    void PreviousWeapon();
+
+    UFUNCTION(BlueprintCallable)
+    void FireCurrentWeapon();
+
+    UFUNCTION(BlueprintCallable)
+    void ReloadCurrentWeapon();
 };

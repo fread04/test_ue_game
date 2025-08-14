@@ -1,8 +1,7 @@
 #include "InventoryManager.h"
-#include "GameFramework/Actor.h"
 #include "Camera/CameraComponent.h"
 #include "DrawDebugHelpers.h"
-#include "Engine/World.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/PlayerController.h"
 
 UInventoryManager::UInventoryManager()
@@ -13,103 +12,165 @@ UInventoryManager::UInventoryManager()
 void UInventoryManager::BeginPlay()
 {
     Super::BeginPlay();
-    CurrentWeapon = nullptr;
+}
+
+AWeaponBase* UInventoryManager::GetCurrentWeapon() const
+{
+    if (CurrentSlotIndex >= 0 && CurrentSlotIndex < MaxSlots)
+    {
+        return Weapons[CurrentSlotIndex];
+    }
+    return nullptr;
+}
+
+int32 UInventoryManager::FindEmptySlot() const
+{
+    for (int32 i = 0; i < MaxSlots; i++)
+    {
+        if (!Weapons[i])
+            return i;
+    }
+    return -1;
+}
+
+void UInventoryManager::AttachWeaponToHand(AWeaponBase* Weapon)
+{
+    ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
+    if (!OwnerChar || !Weapon) return;
+
+    Weapon->AttachToComponent(
+        OwnerChar->GetMesh(),
+        FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+        FName("WeaponSocket") // Create this socket in skeletal mesh
+    );
+}
+
+void UInventoryManager::DetachWeapon(AWeaponBase* Weapon)
+{
+    if (!Weapon) return;
+    Weapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 }
 
 void UInventoryManager::PickUpWeapon()
 {
-    AActor* Owner = GetOwner();
-    if (!Owner) return;
+    ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
+    if (!OwnerChar) return;
 
-    // ѕолучаем контроллер и камеру персонажа
-    APlayerController* PC = Cast<APlayerController>(Owner->GetInstigatorController());
-    if (!PC) return;
+    UCameraComponent* Camera = OwnerChar->FindComponentByClass<UCameraComponent>();
+    if (!Camera) return;
 
-    FVector CameraLocation;
-    FRotator CameraRotation;
+    FVector Start = Camera->GetComponentLocation();
+    FVector End = Start + Camera->GetForwardVector() * PickupRange;
 
-    PC->GetPlayerViewPoint(CameraLocation, CameraRotation);
-
-    FVector TraceStart = CameraLocation;
-    FVector TraceEnd = TraceStart + (CameraRotation.Vector() * PickupRange);
-
-    FHitResult HitResult;
-
+    FHitResult Hit;
     FCollisionQueryParams Params;
-    Params.AddIgnoredActor(Owner);  // „тобы не попадать в самого персонажа
+    Params.AddIgnoredActor(OwnerChar);
 
-    bool bHit = Owner->GetWorld()->LineTraceSingleByChannel(
-        HitResult,
-        TraceStart,
-        TraceEnd,
-        ECC_Visibility,
-        Params
-    );
+    bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
 
-    // ƒл€ дебага: рисуем луч в мире
-    DrawDebugLine(Owner->GetWorld(), TraceStart, TraceEnd, FColor::Green, false, 2.f);
+    DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.f);
 
-    if (bHit && IsValid(HitResult.GetActor()))
+    if (bHit)
     {
-        AWeaponBase* HitWeapon = Cast<AWeaponBase>(HitResult.GetActor());
-        if (HitWeapon)
+        AWeaponBase* Weapon = Cast<AWeaponBase>(Hit.GetActor());
+        if (Weapon)
         {
-            UE_LOG(LogTemp, Log, TEXT("Weapon found to pick up: %s"), *HitWeapon->GetName());
-            EquipWeapon(HitWeapon);
+            int32 EmptySlot = FindEmptySlot();
+            if (EmptySlot != -1)
+            {
+                Weapons[EmptySlot] = Weapon;
+                Weapon->SetActorHiddenInGame(true);
+                Weapon->SetActorEnableCollision(false);
 
-            // ѕр€чем оружие из мира и отключаем коллизию
-            HitWeapon->SetActorHiddenInGame(true);
-            HitWeapon->SetActorEnableCollision(false);
+                // If no weapon equipped - equip immediately
+                if (CurrentSlotIndex == -1)
+                {
+                    EquipWeapon(EmptySlot);
+                }
+            }
         }
     }
-    else
+}
+
+void UInventoryManager::EquipWeapon(int32 SlotIndex)
+{
+    if (SlotIndex < 0 || SlotIndex >= MaxSlots) return;
+    if (!Weapons[SlotIndex]) return;
+
+    // Unequip current
+    if (CurrentSlotIndex != -1 && Weapons[CurrentSlotIndex])
     {
-        UE_LOG(LogTemp, Log, TEXT("No weapon found in line of sight"));
+        Weapons[CurrentSlotIndex]->SetActorHiddenInGame(true);
+        DetachWeapon(Weapons[CurrentSlotIndex]);
+    }
+
+    CurrentSlotIndex = SlotIndex;
+
+    Weapons[CurrentSlotIndex]->SetActorHiddenInGame(false);
+    AttachWeaponToHand(Weapons[CurrentSlotIndex]);
+}
+
+void UInventoryManager::UnequipCurrentWeapon()
+{
+    if (CurrentSlotIndex != -1 && Weapons[CurrentSlotIndex])
+    {
+        DetachWeapon(Weapons[CurrentSlotIndex]);
+        Weapons[CurrentSlotIndex]->SetActorHiddenInGame(true);
+        CurrentSlotIndex = -1;
     }
 }
 
-
-void UInventoryManager::EquipWeapon(AWeaponBase* NewWeapon)
+void UInventoryManager::DropCurrentWeapon()
 {
-    if (!NewWeapon) return;
+    if (CurrentSlotIndex == -1) return;
 
-    if (CurrentWeapon)
+    ACharacter* OwnerChar = Cast<ACharacter>(GetOwner());
+    if (!OwnerChar) return;
+
+    AWeaponBase* Weapon = Weapons[CurrentSlotIndex];
+    if (!Weapon) return;
+
+    DetachWeapon(Weapon);
+    Weapon->SetActorHiddenInGame(false);
+    Weapon->SetActorEnableCollision(true);
+    Weapon->SetActorLocation(OwnerChar->GetActorLocation() + OwnerChar->GetActorForwardVector() * 50.f);
+
+    Weapons[CurrentSlotIndex] = nullptr;
+    CurrentSlotIndex = -1;
+}
+
+void UInventoryManager::NextWeapon()
+{
+    if (MaxSlots < 2) return;
+    int32 NewIndex = (CurrentSlotIndex + 1) % MaxSlots;
+    if (Weapons[NewIndex])
     {
-        // ≈сли хочешь Ч можно добавить логику сн€ти€ старого оружи€, например, скрыть или дропнуть
-        UnequipWeapon();
-    }
-
-    CurrentWeapon = NewWeapon;
-
-    // —делать оружие дочерним актором персонажа, чтобы "в руках"
-    AActor* Owner = GetOwner();
-    if (Owner)
-    {
-        NewWeapon->AttachToComponent(Owner->GetRootComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+        EquipWeapon(NewIndex);
     }
 }
 
-void UInventoryManager::UnequipWeapon()
+void UInventoryManager::PreviousWeapon()
 {
-    if (CurrentWeapon)
+    if (MaxSlots < 2) return;
+    int32 NewIndex = (CurrentSlotIndex - 1 + MaxSlots) % MaxSlots;
+    if (Weapons[NewIndex])
     {
-        CurrentWeapon->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-        CurrentWeapon = nullptr;
+        EquipWeapon(NewIndex);
     }
 }
 
 void UInventoryManager::FireCurrentWeapon()
 {
-    if (CurrentWeapon)
+    if (GetCurrentWeapon())
     {
-        CurrentWeapon->Shoot();
+        GetCurrentWeapon()->Shoot();
     }
 }
 
 void UInventoryManager::ReloadCurrentWeapon()
 {
-    if (CurrentWeapon)
+    if (GetCurrentWeapon())
     {
-        CurrentWeapon->Reload();
+        GetCurrentWeapon()->Reload();
     }
 }
