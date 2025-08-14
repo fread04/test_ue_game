@@ -6,7 +6,7 @@
 #include "InventoryManager.generated.h"
 
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
-class TESTTEST1_API UInventoryManager : public UActorComponent
+class SUMMONERSGAME_API UInventoryManager : public UActorComponent
 {
     GENERATED_BODY()
 

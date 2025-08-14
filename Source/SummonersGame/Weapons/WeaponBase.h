@@ -8,7 +8,7 @@
 #include "WeaponBase.generated.h"
 
 UCLASS()
-class TESTTEST1_API AWeaponBase : public AActor
+class SUMMONERSGAME_API AWeaponBase : public AActor
 {
     GENERATED_BODY()
 

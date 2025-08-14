@@ -9,7 +9,7 @@
 /**
  * 
  */
-class TESTTEST1_API WeaponData
+class SUMMONERSGAME_API WeaponData
 {
 public:
 	WeaponData();

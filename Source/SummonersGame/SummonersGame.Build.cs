@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class TestTest1 : ModuleRules
+public class SummonersGame : ModuleRules
 {
-	public TestTest1(ReadOnlyTargetRules Target) : base(Target)
+	public SummonersGame(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
@@ -22,7 +22,7 @@ public class TestTest1 : ModuleRules
 
         PrivateIncludePaths.AddRange(new string[]
         {
-            "TestTest1"
+            "SummonersGame"
         });
     }
 }

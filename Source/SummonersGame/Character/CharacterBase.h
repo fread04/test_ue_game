@@ -7,7 +7,7 @@
 #include "CharacterBase.generated.h"
 
 UCLASS()
-class TESTTEST1_API ACharacterBase : public ACharacter
+class SUMMONERSGAME_API ACharacterBase : public ACharacter
 {
 	GENERATED_BODY()
 
