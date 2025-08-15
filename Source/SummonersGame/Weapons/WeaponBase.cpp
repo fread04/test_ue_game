@@ -1,5 +1,6 @@
 #include "WeaponBase.h"
 #include "TimerManager.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 AWeaponBase::AWeaponBase()
 {
@@ -81,6 +82,9 @@ void AWeaponBase::Shoot()
     UE_LOG(LogTemp, Log, TEXT("%s fired! Ammo left: %d"), *WeaponStats.WeaponName, CurrentAmmo);
 
     // Тут будет логика спавна пули
+    TArray<AActor*> ActorsToIgnore;
+    FHitResult HitResult;
+    UKismetSystemLibrary::LineTraceSingle(this, GetActorLocation(), GetActorLocation() + GetActorForwardVector()*1000, ETraceTypeQuery::TraceTypeQuery1, false, ActorsToIgnore, EDrawDebugTrace::ForDuration, HitResult, true);
 
     // Разрешаем стрелять снова через FireRate
     GetWorldTimerManager().SetTimer(

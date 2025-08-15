@@ -16,7 +16,6 @@ public:
 	~WeaponData();
 };
 
-// Ёто ключева€ строчка Ч так мы говорим UE, что структура будет видна в блюпринтах и Data Table
 USTRUCT(BlueprintType)
 struct FWeaponData : public FTableRowBase
 {
