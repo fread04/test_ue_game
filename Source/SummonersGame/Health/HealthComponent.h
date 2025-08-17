@@ -48,4 +48,26 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Health")
     float GetMaxHealth() const;
+
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void SetMaxHealth(float NewMaxHealth)
+    {
+        MaxHealth = FMath::Max(NewMaxHealth, 1.f);
+        // Не трогаем CurrentHealth здесь, пусть вызывающий код сам задаст CurrentHealth
+        OnHealthChanged.Broadcast(CurrentHealth);
+    }
+
+
+    UFUNCTION(BlueprintCallable, Category = "Health")
+    void SetCurrentHealth(float NewHealth)
+    {
+        CurrentHealth = FMath::Clamp(NewHealth, 0.f, MaxHealth);
+        OnHealthChanged.Broadcast(CurrentHealth);
+
+        if (CurrentHealth <= 0.f)
+        {
+            OnDeath.Broadcast();
+        }
+    }
+
 };

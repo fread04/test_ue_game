@@ -22,28 +22,40 @@ void UHealthComponent::BeginPlay()
 
 void UHealthComponent::TakeDamage(float Amount)
 {
+    UE_LOG(LogTemp, Log, TEXT("[HealthComp] TakeDamage called: Amount=%.2f | Before: Current=%.2f Max=%.2f"),
+        Amount, CurrentHealth, MaxHealth);
+
     if (Amount <= 0.0f || IsDead())
         return;
 
-    CurrentHealth = FMath::Clamp(CurrentHealth - Amount, 0.0f, MaxHealth);
+    CurrentHealth = FMath::Clamp(CurrentHealth - Amount, 0.f, MaxHealth);
+
+    UE_LOG(LogTemp, Log, TEXT("[HealthComp] After TakeDamage: Current=%.2f"), CurrentHealth);
 
     OnHealthChanged.Broadcast(CurrentHealth);
 
-    if (CurrentHealth <= 0.0f)
+    if (CurrentHealth <= 0.f)
     {
+        UE_LOG(LogTemp, Log, TEXT("[HealthComp] Died"));
         OnDeath.Broadcast();
     }
 }
 
 void UHealthComponent::Heal(float Amount)
 {
+    UE_LOG(LogTemp, Log, TEXT("[HealthComp] Heal called: Amount=%.2f | Before: Current=%.2f Max=%.2f"),
+        Amount, CurrentHealth, MaxHealth);
+
     if (Amount <= 0.0f || IsDead())
         return;
 
-    CurrentHealth = FMath::Clamp(CurrentHealth + Amount, 0.0f, MaxHealth);
+    CurrentHealth = FMath::Clamp(CurrentHealth + Amount, 0.f, MaxHealth);
+
+    UE_LOG(LogTemp, Log, TEXT("[HealthComp] After Heal: Current=%.2f"), CurrentHealth);
 
     OnHealthChanged.Broadcast(CurrentHealth);
 }
+
 
 bool UHealthComponent::IsDead() const
 {
