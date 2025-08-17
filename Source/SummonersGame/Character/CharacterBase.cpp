@@ -1,35 +1,76 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "CharacterBase.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
-// Sets default values
 ACharacterBase::ACharacterBase()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+    PrimaryActorTick.bCanEverTick = true;
 
+    HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 }
 
-// Called when the game starts or when spawned
 void ACharacterBase::BeginPlay()
 {
-	Super::BeginPlay();
-	
+    Super::BeginPlay();
+
+    // Загружаем статы
+    if (CharacterStatsTable && !CharacterRowName.IsNone())
+    {
+        LoadCharacterStats();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Character stats not initialized! Table: %s | Row: %s"),
+            CharacterStatsTable ? TEXT("OK") : TEXT("NULL"),
+            *CharacterRowName.ToString());
+    }
 }
 
-// Called every frame
 void ACharacterBase::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
-
+    Super::Tick(DeltaTime);
 }
 
-// Called to bind functionality to input
 void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
+    Super::SetupPlayerInputComponent(PlayerInputComponent);
 }
 
+void ACharacterBase::LoadCharacterStats()
+{
+    if (!CharacterStatsTable || CharacterRowName.IsNone())
+        return;
+
+    FCharacterStats* Data = CharacterStatsTable->FindRow<FCharacterStats>(CharacterRowName, TEXT(""));
+
+    if (Data)
+    {
+        LoadedStats = *Data;
+
+        // Устанавливаем скорость
+        if (GetCharacterMovement())
+        {
+            GetCharacterMovement()->MaxWalkSpeed = LoadedStats.WalkSpeed;
+        }
+
+        // Устанавливаем здоровье
+        if (HealthComponent)
+        {
+            HealthComponent->SetMaxHealth(LoadedStats.MaxHealth);
+            HealthComponent->SetCurrentHealth(LoadedStats.MaxHealth);
+        }
+
+        UE_LOG(LogTemp, Log, TEXT("Loaded stats for %s: WalkSpeed=%.1f, MaxHealth=%.1f"),
+            *CharacterRowName.ToString(), LoadedStats.WalkSpeed, LoadedStats.MaxHealth);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("No row found for %s in CharacterStatsTable"), *CharacterRowName.ToString());
+    }
+}
+
+void ACharacterBase::InitializeCharacter(UDataTable* Table, FName RowName)
+{
+    CharacterStatsTable = Table;
+    CharacterRowName = RowName;
+    LoadCharacterStats();
+}

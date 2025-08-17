@@ -1,35 +1,45 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "CharacterStats.h"
 #include "Health/HealthComponent.h"
-
 #include "CharacterBase.generated.h"
 
 UCLASS()
 class SUMMONERSGAME_API ACharacterBase : public ACharacter
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
-	ACharacterBase();
+    ACharacterBase();
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+    virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
-	class UHealthComponent* HealthComponent;
+    /** Компонент здоровья */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UHealthComponent* HealthComponent;
 
+    /** Таблица характеристик персонажа */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+    UDataTable* CharacterStatsTable;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+    /** Имя строки в таблице характеристик */
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+    FName CharacterRowName;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    /** Загруженные характеристики */
+    FCharacterStats LoadedStats;
 
+public:
+    virtual void Tick(float DeltaTime) override;
+    virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+    /** Загружает характеристики из текущей CharacterStatsTable & CharacterRowName */
+    UFUNCTION(BlueprintCallable, Category = "Stats")
+    void LoadCharacterStats();
+
+    /** Инициализирует персонажа таблицей и строкой (для динамического спавна) */
+    void InitializeCharacter(UDataTable* Table, FName RowName);
 };
