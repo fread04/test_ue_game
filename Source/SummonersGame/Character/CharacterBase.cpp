@@ -1,3 +1,4 @@
+// CharacterBase.cpp
 #include "CharacterBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -5,14 +6,18 @@ ACharacterBase::ACharacterBase()
 {
     PrimaryActorTick.bCanEverTick = true;
 
+    // Create health component
     HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+
+    // Create inventory component
+    InventoryManager = CreateDefaultSubobject<UInventoryManager>(TEXT("InventoryManager"));
 }
 
 void ACharacterBase::BeginPlay()
 {
     Super::BeginPlay();
 
-    // Загружаем статы
+    // Load stats if table and row are set
     if (CharacterStatsTable && !CharacterRowName.IsNone())
     {
         LoadCharacterStats();
@@ -30,11 +35,6 @@ void ACharacterBase::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 }
 
-void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-    Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
-
 void ACharacterBase::LoadCharacterStats()
 {
     if (!CharacterStatsTable || CharacterRowName.IsNone())
@@ -46,13 +46,13 @@ void ACharacterBase::LoadCharacterStats()
     {
         LoadedStats = *Data;
 
-        // Устанавливаем скорость
+        // Set movement speed
         if (GetCharacterMovement())
         {
             GetCharacterMovement()->MaxWalkSpeed = LoadedStats.WalkSpeed;
         }
 
-        // Устанавливаем здоровье
+        // Set health
         if (HealthComponent)
         {
             HealthComponent->SetMaxHealth(LoadedStats.MaxHealth);

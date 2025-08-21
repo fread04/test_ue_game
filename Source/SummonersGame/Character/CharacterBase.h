@@ -1,9 +1,11 @@
+// CharacterBase.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "CharacterStats.h"
 #include "Health/HealthComponent.h"
+#include "InventoryManager.h"
 #include "CharacterBase.generated.h"
 
 UCLASS()
@@ -17,29 +19,32 @@ public:
 protected:
     virtual void BeginPlay() override;
 
-    /** Компонент здоровья */
+    /** Health component */
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
     UHealthComponent* HealthComponent;
 
-    /** Таблица характеристик персонажа */
+    /** Inventory component */
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+    UInventoryManager* InventoryManager;
+
+    /** Character stats table */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
     UDataTable* CharacterStatsTable;
 
-    /** Имя строки в таблице характеристик */
+    /** Row name in stats table */
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
     FName CharacterRowName;
 
-    /** Загруженные характеристики */
+    /** Loaded stats */
     FCharacterStats LoadedStats;
 
 public:
     virtual void Tick(float DeltaTime) override;
-    virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-    /** Загружает характеристики из текущей CharacterStatsTable & CharacterRowName */
+    /** Load stats from table */
     UFUNCTION(BlueprintCallable, Category = "Stats")
     void LoadCharacterStats();
 
-    /** Инициализирует персонажа таблицей и строкой (для динамического спавна) */
+    /** Initialize character for dynamic spawn */
     void InitializeCharacter(UDataTable* Table, FName RowName);
 };
